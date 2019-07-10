@@ -22,11 +22,6 @@ class vl_int
         int what(int) const;
         int ncwhat(int);
         
-        bool larger_than_0() const
-        {
-            return !is_negative;
-        };
-        
         bool operator<(const vl_int&) const;
         bool operator>(const vl_int&) const;
         bool operator==(const vl_int&) const;
@@ -39,51 +34,70 @@ class vl_int
         void subtract(const vl_int&);
         void multiply(const vl_int&);
         void divide(const vl_int&);
+        void dump(std::ostream&) const;
         long long toll() const;
         std::string tostring() const;
     //private:
-        bool is_negative;
+        //bool is_negative;
         std::vector<int> v;
 };
 
 vl_int::vl_int(int n)
 {
+    bool is_negative = false;
     if (n<0) is_negative = true;
+    //if (is_negative) std::cout<<"-------\n";
     if (n==0)
     {
         v.erase(v.begin(), v.end());
         return;
     }
     for (;n!=0;n/=_NUM)
-        v.push_back(n%_NUM);
+        v.push_back(is_negative ? n%_NUM : n%_NUM);
 }
 
 vl_int::vl_int(std::string ts)
 {
+    bool is_negative = (ts[0] == '-');
+    //if (is_negative) std::cout<<"-------\n";
+    if (is_negative) ts = ts.substr(1);
+    
     v.erase(v.begin(), v.end());
     
     std::string::iterator it;
     for (it=ts.begin();it!=ts.end();it++)
         v.push_back(*it - '0');
+    
+    if (is_negative)
+        for (unsigned int i=0;i<v.size();i++) v[i] = -v[i];
     std::reverse(v.begin(), v.end());
 }
 
 std::string vl_int::tostring() const
 {
     std::string ts, tr(" ");
+    
     std::vector<int>::iterator it;
     for (auto i : v)
     {
-        tr = (char)i + '0';
+        tr = std::abs((char)i) + '0';
         ts = tr + ts;
     }
     
+    if (v[0] < 0) ts = "-" + ts;
     return ts;
 }
 
 void vl_int::operator=(const vl_int& vl)
 {
     v = vl.v;
+}
+
+void vl_int::dump(std::ostream& out) const
+{
+    for (auto i : v)
+        out<<i<<" ";
+    out<<std::endl;
 }
 /*
 std::istream& vl_int::operator>>(std::istream& in, vl_int& vl)
@@ -149,9 +163,11 @@ void vl_int::add(const vl_int& vl)
 int main()
 {
     using namespace std;
-    vl_int a("12"), b("345");
-    cin>>a>>b;
+    vl_int a(233), b("345");
+    //cin>>a>>b;
     a.add(b);
     cout<<a.tostring()<<endl;
+    cout<<vl_int(-233).tostring()<<endl;
+    vl_int(-233).dump(cout);
     return 0;
 }
