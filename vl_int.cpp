@@ -16,9 +16,8 @@ class vl_int
         
         void operator=(const vl_int&);
         
-        // TODO: interation with istream/ostream
-        //friend std::istream& operator>>(std::istream& in, vl_int& vl);
-        //friend std::ostream& operator<<(std::ostream& out, vl_int& vl);
+        friend std::istream& operator>>(std::istream& in, vl_int& vl);
+        friend std::ostream& operator<<(std::ostream& out, vl_int& vl);
         int what(int) const;
         int ncwhat(int);
         
@@ -99,32 +98,22 @@ void vl_int::dump(std::ostream& out) const
         out<<i<<" ";
     out<<std::endl;
 }
-/*
-std::istream& vl_int::operator>>(std::istream& in, vl_int& vl)
+
+std::istream& operator>>(std::istream& in, vl_int& vl)
 {
     std::string ts;
-    std::vector<int>& v = vl.v;
     in>>ts;
-    v.erase(v.begin(), v.end());
-    
-    std::string::iterator it;
-    for (it=ts.begin();it!=ts.end();it++)
-        v.push_back(*it - '0');
-    std::reverse(v.begin(), v.end());
+    vl = vl_int(ts);
     return in;
 }
 
-std::ostream& vl_int::operator<<(std::ostream& out) const
+std::ostream& operator<<(std::ostream& out, vl_int& vl)
 {
-    std::string ts;
-    std::vector<int>::reverse_iterator rit;
-    for (rit=v.rbegin();rit!=v.rend();rit++)
-        ts += *rit + '0';
-    
+    std::string ts = vl.tostring();
     out<<ts;
     return out;
 }
-*/
+
 int vl_int::what(int i) const
 {
     if ((unsigned)i >= v.size() )
@@ -163,10 +152,10 @@ void vl_int::add(const vl_int& vl)
 int main()
 {
     using namespace std;
-    vl_int a(233), b("345");
-    //cin>>a>>b;
+    vl_int a, b;
+    cin>>a>>b;
     a.add(b);
-    cout<<a.tostring()<<endl;
+    cout<<a<<endl;
     cout<<vl_int(-233).tostring()<<endl;
     vl_int(-233).dump(cout);
     return 0;
