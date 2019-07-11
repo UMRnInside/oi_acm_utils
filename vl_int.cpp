@@ -33,7 +33,9 @@ class vl_int
         void subtract(const vl_int&);
         void multiply(const vl_int&);
         void divide(const vl_int&);
-        void remove_post0();
+        void remove_tail0();
+        void fix();
+        void negative();
         void dump(std::ostream&) const;
         long long toll() const;
         std::string tostring() const;
@@ -135,7 +137,7 @@ int vl_int::ncwhat(int i)
     return v[i];
 }
 
-void vl_int::remove_post0()
+void vl_int::remove_tail0()
 {
     std::reverse(v.begin(), v.end());
     
@@ -145,6 +147,55 @@ void vl_int::remove_post0()
      
     v.erase(v.begin(), it);
     std::reverse(v.begin(), v.end());
+}
+
+void vl_int::negative()
+{
+    std::vector<int>::iterator it;
+    for (it=v.begin();it!=v.end();it++)
+        *it = -(*it);
+}
+
+void vl_int::fix()
+{
+    if (v.back() == 0) remove_tail0();
+    bool revflag = false;
+    if (v.back() < 0)
+    {
+        revflag = true;
+        negative();
+    }
+    // neg intergrity
+    int limit = v.size();
+    for (int i=limit-1;i>1;i--)
+    {
+        for (int d=0;d<_NUM;d++)
+        {
+            if (v[i-1] + d*_NUM > 0)
+            {
+                v[i-1] += d*_NUM;
+                v[i] -= d;
+                break;
+            }
+        }
+    }
+    // round 2
+    for (unsigned int i=0;i<v.size();i++)
+    {
+        //std::cout<<i<<":"<<v[i]<<"\n";
+        if (v[i] >= _NUM)
+        {
+            int d = 0;
+            while (v[i] - d*_NUM>= _NUM) d++;
+            v[i] -= d*_NUM;
+            
+            ncwhat(i+1);
+            v[i+1] += d;
+        }
+    }
+    
+    remove_tail0();
+    if (revflag) negative();
 }
 
 void vl_int::add(const vl_int& vl)
@@ -161,18 +212,16 @@ void vl_int::add(const vl_int& vl)
             v[i+1] += sum/_NUM;
         }
     }
-    //remove_post0();
+    fix();
 }
 
 void vl_int::subtract(const vl_int& vl)
 {
     vl_int nv = vl;
-    std::vector<int>::iterator it;
-    for (it=nv.v.begin();it!=nv.v.end();it++)
-        *it = -(*it);
+    nv.negative();
     //nv.dump(std::cout);
     add(nv);
-    remove_post0();
+    fix();
 }
 
 int main()
@@ -181,7 +230,7 @@ int main()
     vl_int a, b;
     cin>>a>>b;
     a.add(b);
-    //a.dump(cout);
+    a.dump(cout);
     cout<<a<<endl;
     
     cout<<vl_int(-233).tostring()<<endl;
