@@ -17,7 +17,7 @@ class vl_int
         void operator=(const vl_int&);
         
         friend std::istream& operator>>(std::istream& in, vl_int& vl);
-        friend std::ostream& operator<<(std::ostream& out, vl_int& vl);
+        friend std::ostream& operator<<(std::ostream& out, const vl_int& vl);
         int what(int) const;
         int ncwhat(int);
         
@@ -32,7 +32,9 @@ class vl_int
         void add(const vl_int&);
         void subtract(const vl_int&);
         void multiply(const vl_int&);
+        void multiply(int n);
         void divide(const vl_int&);
+        
         void remove_tail0();
         void fix();
         void negative();
@@ -111,7 +113,7 @@ std::istream& operator>>(std::istream& in, vl_int& vl)
     return in;
 }
 
-std::ostream& operator<<(std::ostream& out, vl_int& vl)
+std::ostream& operator<<(std::ostream& out, const vl_int& vl)
 {
     std::string ts = vl.tostring();
     out<<ts;
@@ -167,14 +169,14 @@ void vl_int::fix()
     }
     // neg intergrity
     int limit = v.size();
-    for (int i=limit-1;i>1;i--)
+    for (int i=0;i<limit-1;i++)
     {
         for (int d=0;d<_NUM;d++)
         {
-            if (v[i-1] + d*_NUM > 0)
+            if (v[i] + d*_NUM > 0)
             {
-                v[i-1] += d*_NUM;
-                v[i] -= d;
+                v[i] += d*_NUM;
+                v[i+1] -= d;
                 break;
             }
         }
@@ -224,21 +226,32 @@ void vl_int::subtract(const vl_int& vl)
     fix();
 }
 
+vl_int vl_int::operator+(const vl_int& vl) const
+{
+    vl_int tmp;
+    tmp.add(*this);
+    tmp.add(vl);
+    return tmp;
+}
+
+vl_int vl_int::operator-(const vl_int& vl) const
+{
+    vl_int tmp=*this, tmp2=vl;
+    tmp2.negative();
+    tmp.add(tmp2);
+    return tmp;
+}
+
 int main()
 {
     using namespace std;
     vl_int a, b;
     cin>>a>>b;
-    a.add(b);
-    a.dump(cout);
-    cout<<a<<endl;
+    //a.add(b);
+    //a.dump(cout);
+    cout<<a+b<<" "<<a-b<<endl;
     
     cout<<vl_int(-233).tostring()<<endl;
     vl_int(-233).dump(cout);
-    
-    cin>>a>>b;
-    a.subtract(b);
-    cout<<a<<endl;
-    a.dump(cout);
     return 0;
 }
