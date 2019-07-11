@@ -33,6 +33,7 @@ class vl_int
         void subtract(const vl_int&);
         void multiply(const vl_int&);
         void divide(const vl_int&);
+        void remove_post0();
         void dump(std::ostream&) const;
         long long toll() const;
         std::string tostring() const;
@@ -75,15 +76,16 @@ vl_int::vl_int(std::string ts)
 std::string vl_int::tostring() const
 {
     std::string ts, tr(" ");
-    
+    bool neg = false;
     std::vector<int>::iterator it;
     for (auto i : v)
     {
         tr = std::abs((char)i) + '0';
         ts = tr + ts;
+        if (i < 0) neg = true;
     }
     
-    if (v[0] < 0) ts = "-" + ts;
+    if (neg) ts = "-" + ts;
     return ts;
 }
 
@@ -133,6 +135,18 @@ int vl_int::ncwhat(int i)
     return v[i];
 }
 
+void vl_int::remove_post0()
+{
+    std::reverse(v.begin(), v.end());
+    
+    std::vector<int>::iterator it;
+    for (it=v.begin();it!=v.end();it++)
+        if (*it != 0) break;
+     
+    v.erase(v.begin(), it);
+    std::reverse(v.begin(), v.end());
+}
+
 void vl_int::add(const vl_int& vl)
 {
     int limit = std::max(vl.v.size(), v.size()); 
@@ -144,9 +158,21 @@ void vl_int::add(const vl_int& vl)
         if (sum/_NUM)
         {
             ncwhat(i+1);
-            v[i+1] = sum/_NUM;
+            v[i+1] += sum/_NUM;
         }
     }
+    //remove_post0();
+}
+
+void vl_int::subtract(const vl_int& vl)
+{
+    vl_int nv = vl;
+    std::vector<int>::iterator it;
+    for (it=nv.v.begin();it!=nv.v.end();it++)
+        *it = -(*it);
+    //nv.dump(std::cout);
+    add(nv);
+    remove_post0();
 }
 
 int main()
@@ -155,8 +181,15 @@ int main()
     vl_int a, b;
     cin>>a>>b;
     a.add(b);
+    //a.dump(cout);
     cout<<a<<endl;
+    
     cout<<vl_int(-233).tostring()<<endl;
     vl_int(-233).dump(cout);
+    
+    cin>>a>>b;
+    a.subtract(b);
+    cout<<a<<endl;
+    a.dump(cout);
     return 0;
 }
