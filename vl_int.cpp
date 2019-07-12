@@ -4,6 +4,7 @@
 #include <cctype>
 #include <algorithm>
 #include <string>
+#include <vector>
 
 #define _NUM 10
 // very large int, may be overkill :)
@@ -81,14 +82,14 @@ std::string vl_int::tostring() const
 {
     std::string ts, tr(" ");
     bool neg = false;
-    std::vector<int>::iterator it;
+    
     for (auto i : v)
     {
         tr = std::abs((char)i) + '0';
         ts = tr + ts;
         if (i < 0) neg = true;
     }
-    
+    if (v.size() == 0) return "0";
     if (neg) ts = "-" + ts;
     return ts;
 }
