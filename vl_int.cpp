@@ -20,7 +20,7 @@ class vl_int
         friend std::istream& operator>>(std::istream& in, vl_int& vl);
         friend std::ostream& operator<<(std::ostream& out, const vl_int& vl);
         int what(int) const;
-        int ncwhat(int);
+        int& operator[](int);
         
         bool operator<(const vl_int&) const;
         bool operator>(const vl_int&) const;
@@ -33,7 +33,7 @@ class vl_int
         void add(const vl_int&);
         void subtract(const vl_int&);
         void multiply(const vl_int&);
-        void multiply(int n);
+        void multiply(int n, int offset=0, bool needfix=true);
         void divide(const vl_int&);
         
         void remove_tail0();
@@ -130,12 +130,12 @@ int vl_int::what(int i) const
     return v[i];
 }
 
-int vl_int::ncwhat(int i)
+int& vl_int::operator[](int i)
 {
     if ((unsigned)i >= v.size() )
     {
         while ( (unsigned)i >= v.size()) v.push_back(0);
-        return 0;
+        //return 0;
     }
     return v[i];
 }
@@ -192,8 +192,8 @@ void vl_int::fix()
             while (v[i] - d*_NUM>= _NUM) d++;
             v[i] -= d*_NUM;
             
-            ncwhat(i+1);
-            v[i+1] += d;
+            (*this)[i+1] += d;
+            //v[i+1] += d;
         }
     }
     
@@ -206,12 +206,12 @@ void vl_int::add(const vl_int& vl)
     int limit = std::max(vl.v.size(), v.size()); 
     for (int i=0;i<limit;i++)
     {
-        int sum = ncwhat(i) + vl.what(i);
+        int sum = (*this)[i] + vl.what(i);
         v[i] = sum % _NUM;
         
         if (sum/_NUM)
         {
-            ncwhat(i+1);
+            (*this)[i+1];
             v[i+1] += sum/_NUM;
         }
     }
@@ -225,6 +225,28 @@ void vl_int::subtract(const vl_int& vl)
     //nv.dump(std::cout);
     add(nv);
     fix();
+}
+
+void vl_int::multiply(int n, int offset, bool needfix)
+{
+    //void multiply(int , int offset=0, bool needfix=true);
+    vl_int& self = *this;
+    vl_int tmp;
+    
+    int o_size = self.v.size();
+    
+    for (int i=0;i<o_size;i++)
+        tmp[i+offset] = n*(self[i]);
+    
+    //tmp.fix();
+    tmp.dump(std::cout);
+    dump(std::cout);
+    
+    for (size_t i=0;i<tmp.v.size();i++)
+        self[i] = tmp[i];
+    dump(std::cout);
+    
+    if (needfix) fix();
 }
 
 vl_int vl_int::operator+(const vl_int& vl) const
@@ -252,7 +274,9 @@ int main()
     //a.dump(cout);
     cout<<a+b<<" "<<a-b<<endl;
     
-    cout<<vl_int(-233).tostring()<<endl;
+    a.multiply(-11);
+    //a.dump(cout);
+    cout<<a<<" "<<vl_int(-233).tostring()<<endl;
     vl_int(-233).dump(cout);
     return 0;
 }
