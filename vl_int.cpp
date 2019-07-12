@@ -28,12 +28,16 @@ class vl_int
         vl_int operator+(const vl_int&) const;
         vl_int operator-(const vl_int&) const;
         vl_int operator*(const vl_int&) const;
+        vl_int operator*(int) const;
         vl_int operator/(const vl_int&) const;
         
-        void add(const vl_int&);
+        vl_int operator>>(int) const;
+        vl_int operator<<(int) const;
+        
+        void add(const vl_int&, bool needfix=true);
         void subtract(const vl_int&);
         void multiply(const vl_int&);
-        void multiply(int n, int offset=0, bool needfix=true);
+        void multiply(int n, bool needfix=true);
         void divide(const vl_int&);
         
         void remove_tail0();
@@ -121,6 +125,25 @@ std::ostream& operator<<(std::ostream& out, const vl_int& vl)
     return out;
 }
 
+vl_int vl_int::operator<<(int n) const
+{
+    vl_int tmp = *this;
+    for (int i=1;i<=n;i++)
+        tmp.v.insert(tmp.v.begin(), 0);
+    return tmp;
+}
+
+vl_int vl_int::operator>>(int n) const
+{
+    vl_int tmp = *this;
+    std::vector<int>::iterator it;
+    it = tmp.v.begin();
+    for (int i=1;i<=n;i++)
+        it++;
+    tmp.v.erase(tmp.v.begin(), it);
+    return tmp;
+}
+
 int vl_int::what(int i) const
 {
     if ((unsigned)i >= v.size() )
@@ -149,6 +172,7 @@ void vl_int::remove_tail0()
         if (*it != 0) break;
      
     v.erase(v.begin(), it);
+    if (v.size() == 0) v.push_back(0);
     std::reverse(v.begin(), v.end());
 }
 
@@ -201,7 +225,7 @@ void vl_int::fix()
     if (revflag) negative();
 }
 
-void vl_int::add(const vl_int& vl)
+void vl_int::add(const vl_int& vl, bool needfix)
 {
     int limit = std::max(vl.v.size(), v.size()); 
     for (int i=0;i<limit;i++)
@@ -215,7 +239,7 @@ void vl_int::add(const vl_int& vl)
             v[i+1] += sum/_NUM;
         }
     }
-    fix();
+    if (needfix) fix();
 }
 
 void vl_int::subtract(const vl_int& vl)
@@ -227,26 +251,37 @@ void vl_int::subtract(const vl_int& vl)
     fix();
 }
 
-void vl_int::multiply(int n, int offset, bool needfix)
+void vl_int::multiply(int n, bool needfix)
 {
-    //void multiply(int , int offset=0, bool needfix=true);
+    //void multiply(int, bool needfix=true);
     vl_int& self = *this;
     vl_int tmp;
     
     int o_size = self.v.size();
     
     for (int i=0;i<o_size;i++)
-        tmp[i+offset] = n*(self[i]);
+    {
+        tmp[i+1] = n*(self[i]) / _NUM;
+        self[i] = n*(self[i]) % _NUM;
+    }
     
-    //tmp.fix();
-    tmp.dump(std::cout);
-    dump(std::cout);
-    
-    for (size_t i=0;i<tmp.v.size();i++)
-        self[i] = tmp[i];
-    dump(std::cout);
-    
+    self.add(tmp, false);
     if (needfix) fix();
+}
+
+void vl_int::multiply(const vl_int& vl)
+{
+    int vlsize = vl.v.size();
+    vl_int orig = *this;
+    this->v.erase(this->v.begin(), this->v.end());
+    
+    for (int i=0;i<vlsize;i++)
+    {
+        vl_int faq = orig;
+        faq.multiply(vl.what(i));
+        this->add(faq<<i, i%3==0);
+    }
+    fix();
 }
 
 vl_int vl_int::operator+(const vl_int& vl) const
@@ -265,6 +300,20 @@ vl_int vl_int::operator-(const vl_int& vl) const
     return tmp;
 }
 
+vl_int vl_int::operator*(int n) const
+{
+    vl_int tmp = *this;
+    tmp.multiply(n);
+    return tmp;
+}
+
+vl_int vl_int::operator*(const vl_int& vl) const
+{
+    vl_int tmp = *this;
+    tmp.multiply(vl);
+    return tmp;
+}
+
 int main()
 {
     using namespace std;
@@ -273,10 +322,9 @@ int main()
     //a.add(b);
     //a.dump(cout);
     cout<<a+b<<" "<<a-b<<endl;
+    cout<<a*b<<endl;
     
-    a.multiply(-11);
-    //a.dump(cout);
-    cout<<a<<" "<<vl_int(-233).tostring()<<endl;
-    vl_int(-233).dump(cout);
+    //cout<<a<<" "<<vl_int(-233).tostring()<<endl;
+    //vl_int(-233).dump(cout);
     return 0;
 }
