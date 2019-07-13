@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <string>
 #include <vector>
+#include <math.h>
 
 #define _NUM 10
 // very large int, may be overkill :)
@@ -34,6 +35,8 @@ class vl_int
         
         vl_int operator>>(int) const;
         vl_int operator<<(int) const;
+        void operator>>=(int);
+        void operator<<=(int);
         
         void add(const vl_int&, bool needfix=true);
         void subtract(const vl_int&);
@@ -148,11 +151,22 @@ vl_int vl_int::operator>>(int n) const
 {
     vl_int tmp = *this;
     std::vector<int>::iterator it;
-    it = tmp.v.begin();
-    for (int i=1;i<=n;i++)
-        it++;
+    it = tmp.v.begin() + n;
     tmp.v.erase(tmp.v.begin(), it);
     return tmp;
+}
+
+void vl_int::operator<<=(int n)
+{
+    for (int i=1;i<=n;i++)
+        this->v.insert(this->v.begin(), 0);
+}
+
+void vl_int::operator>>=(int n)
+{
+    std::vector<int>::iterator it;
+    it = this->v.begin() + n;
+    this->v.erase(this->v.begin(), it);
 }
 
 int vl_int::what(int i) const
@@ -289,8 +303,11 @@ void vl_int::multiply(const vl_int& vl)
     for (int i=0;i<vlsize;i++)
     {
         vl_int faq = orig;
-        faq.multiply(vl.what(i));
-        this->add(faq<<i, i%3==0);
+        //faq.multiply(vl.what(i));
+        faq.multiply(vl.v[i]);
+        faq<<=i;
+        this->add(faq, i%17==0);
+        //faq<<=1;
     }
     fix();
 }
@@ -301,8 +318,8 @@ void vl_int::divide(int n, bool needfix)
     size_t osize = v.size();
     for (int i=osize-1;i>=0;i--)
     {
-        if (v[i] < n && i-1 >= 0)
-                v[i-1] += v[i]*_NUM;
+        if (i-1 >= 0)
+            v[i-1] += (v[i]%n)*_NUM;
         v[i] = v[i] / n;
     }
     if (needfix) fix();
@@ -313,7 +330,7 @@ void vl_int::truncate(int n)
     std::vector<int>::iterator it;
     if (v.size() < (unsigned)n) return;
     
-    it = v.begin() + 500;
+    it = v.begin() + n;
     v.erase(it, v.end());
 }
 
@@ -372,13 +389,31 @@ bool vl_int::operator>(const vl_int& vl) const
 vl_int vl_fastpow(vl_int base, vl_int power, int sizelimit=0)
 {
     vl_int result("1"), zero("0");
-    for(;power>zero;power.divide(2))
+    for(;zero<power;power.divide(2))
     {
-        result = (power[0] & 1) ? result * base : result;
-        base = base * base;
+        if (power.v[0] & 1) result.multiply(base);
+        vl_int tmp = base;
+        base.multiply(tmp);
         if (sizelimit)
             result.truncate(sizelimit),base.truncate(sizelimit);
         //std::cout<<result<<" "<<base<<" "<<power<<" "<<(power>zero)<<std::endl;
+        //char faq;
+        //std::cin>>faq;
+    }
+    return result;
+}
+
+vl_int vl_fastpow(vl_int base, int power, int sizelimit=0)
+{
+    vl_int result("1"), zero("0");
+    for(;power;power>>=1)
+    {
+        if (power & 1) result.multiply(base);
+        vl_int tmp = base;
+        base.multiply(tmp);
+        if (sizelimit)
+            result.truncate(sizelimit),base.truncate(sizelimit);
+        //std::cout<<result<<" "<<base<<" "<<power<<" "<<(power>0)<<std::endl;
         //char faq;
         //std::cin>>faq;
     }
@@ -396,7 +431,7 @@ int main()
     cout<<a*b<<endl;
     a.divide(2);
     cout<<a<<endl;
-    cout<<vl_fastpow(a, b, 100)<<endl;
+    //cout<<vl_fastpow(a, b, 0)<<endl;
     
     //cout<<a<<" "<<vl_int(-233).tostring()<<endl;
     //vl_int(-233).dump(cout);
