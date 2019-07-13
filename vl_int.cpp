@@ -30,6 +30,7 @@ class vl_int
         vl_int operator*(const vl_int&) const;
         vl_int operator*(int) const;
         vl_int operator/(const vl_int&) const;
+        vl_int operator/(int) const;
         
         vl_int operator>>(int) const;
         vl_int operator<<(int) const;
@@ -39,15 +40,17 @@ class vl_int
         void multiply(const vl_int&);
         void multiply(int n, bool needfix=true);
         void divide(const vl_int&);
+        void divide(int n, bool needfix=true);
+        void truncate(int);
         
-        void remove_tail0();
+        void remove_tail0(bool force=false);
         void fix();
         void negative();
+        bool is_negative() const;
         void dump(std::ostream&) const;
         long long toll() const;
         std::string tostring() const;
     //private:
-        //bool is_negative;
         std::vector<int> v;
 };
 
@@ -110,6 +113,14 @@ void vl_int::dump(std::ostream& out) const
     out<<std::endl;
 }
 
+bool vl_int::is_negative() const
+{
+    //fix();
+    for (auto i : v)
+        if (i<0) return true;
+    return false;
+}
+
 std::istream& operator>>(std::istream& in, vl_int& vl)
 {
     std::string ts;
@@ -163,7 +174,7 @@ int& vl_int::operator[](int i)
     return v[i];
 }
 
-void vl_int::remove_tail0()
+void vl_int::remove_tail0(bool force)
 {
     std::reverse(v.begin(), v.end());
     
@@ -172,7 +183,7 @@ void vl_int::remove_tail0()
         if (*it != 0) break;
      
     v.erase(v.begin(), it);
-    if (v.size() == 0) v.push_back(0);
+    if (v.size() == 0 && !force) v.push_back(0);
     std::reverse(v.begin(), v.end());
 }
 
@@ -284,6 +295,28 @@ void vl_int::multiply(const vl_int& vl)
     fix();
 }
 
+void vl_int::divide(int n, bool needfix)
+{
+    if (n == 0) return;
+    size_t osize = v.size();
+    for (int i=osize-1;i>=0;i--)
+    {
+        if (v[i] < n && i-1 >= 0)
+                v[i-1] += v[i]*_NUM;
+        v[i] = v[i] / n;
+    }
+    if (needfix) fix();
+}
+
+void vl_int::truncate(int n)
+{
+    std::vector<int>::iterator it;
+    if (v.size() < (unsigned)n) return;
+    
+    it = v.begin() + 500;
+    v.erase(it, v.end());
+}
+
 vl_int vl_int::operator+(const vl_int& vl) const
 {
     vl_int tmp;
@@ -314,6 +347,44 @@ vl_int vl_int::operator*(const vl_int& vl) const
     return tmp;
 }
 
+vl_int vl_int::operator/(int n) const
+{
+    vl_int tmp = *this;
+    tmp.divide(n);
+    return tmp;
+}
+
+bool vl_int::operator<(const vl_int& vl) const
+{
+    vl_int tmp = *this;
+    tmp.subtract(vl);
+    return tmp.is_negative();
+}
+
+bool vl_int::operator>(const vl_int& vl) const
+{
+    vl_int tmp = *this;
+    tmp.subtract(vl);
+    tmp.remove_tail0(true);
+    return (!tmp.is_negative()) && (tmp.v.size() > 0);
+}
+
+vl_int vl_fastpow(vl_int base, vl_int power, int sizelimit=0)
+{
+    vl_int result("1"), zero("0");
+    for(;power>zero;power.divide(2))
+    {
+        result = (power[0] & 1) ? result * base : result;
+        base = base * base;
+        if (sizelimit)
+            result.truncate(sizelimit),base.truncate(sizelimit);
+        //std::cout<<result<<" "<<base<<" "<<power<<" "<<(power>zero)<<std::endl;
+        //char faq;
+        //std::cin>>faq;
+    }
+    return result;
+}
+
 int main()
 {
     using namespace std;
@@ -323,6 +394,9 @@ int main()
     //a.dump(cout);
     cout<<a+b<<" "<<a-b<<endl;
     cout<<a*b<<endl;
+    a.divide(2);
+    cout<<a<<endl;
+    cout<<vl_fastpow(a, b, 100)<<endl;
     
     //cout<<a<<" "<<vl_int(-233).tostring()<<endl;
     //vl_int(-233).dump(cout);
