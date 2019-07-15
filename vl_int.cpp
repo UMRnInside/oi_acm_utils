@@ -32,6 +32,7 @@ class vl_int
         vl_int operator*(int) const;
         vl_int operator/(const vl_int&) const;
         vl_int operator/(int) const;
+        vl_int operator%(const vl_int&) const;
         
         vl_int operator>>(int) const;
         vl_int operator<<(int) const;
@@ -44,6 +45,7 @@ class vl_int
         void multiply(int n, bool needfix=true);
         void divide(const vl_int&);
         void divide(int n, bool needfix=true);
+        void mod(const vl_int&);
         void truncate(int);
         
         void remove_tail0(bool force=false);
@@ -325,6 +327,94 @@ void vl_int::divide(int n, bool needfix)
     if (needfix) fix();
 }
 
+void vl_int::divide(const vl_int& vl)
+{
+    vl_int result(0);
+    bool result_is_negative = is_negative() ^ vl.is_negative();
+    if (is_negative()) negative();
+    
+    // Not to touch vl
+    vl_int nums[10];
+    nums[0] = 0, nums[1] = vl;
+    if (nums[1].is_negative()) nums[1].negative();
+    
+    if ((*this) < nums[1])
+    {
+        // Must be 0
+        this->v.erase(this->v.begin(), this->v.end());
+        this->v.push_back(0);
+        return;
+    }
+    
+    // nums[i] faster
+    for (int i=2;i<=9;i++) nums[i] = nums[1];
+    for (int i=2;i<=9;i++) nums[i].add(nums[i-1]);
+    
+    int offset = v.size() - vl.v.size();
+    for (int i=1;i<=9;i++) nums[i]<<=offset;
+    
+    for (int i=offset;i>=0 && (*this)>0;i--)
+    {
+        result<<=1;
+        for (int j=9;j>=0;j--)
+        {
+            //std::cout<<(*this)<<"<--->"<<nums[j]<<std::endl;
+            if (nums[j] < (*this) || nums[j] == (*this))
+            {
+                if (j == 0) break;
+                
+                this->subtract(nums[j]);
+                result.add(j);
+                break;
+            }
+        }
+        for (int k=1;k<=9;k++) nums[k]>>=1;
+    }
+    
+    if (result_is_negative) result.negative();
+    result.fix();
+    *this = result;
+}
+
+void vl_int::mod(const vl_int& vl)
+{
+    bool result_is_negative = vl.is_negative();
+    if (is_negative()) negative();
+    
+    vl_int nums[10];
+    nums[0] = 0, nums[1] = vl;
+    if (nums[1].is_negative()) nums[1].negative();
+    
+    if ((*this) < nums[1])
+    {
+        //std::cout<<(*this)<<" < "<<nums[1]<<std::endl;
+        if (result_is_negative) negative();
+        return;
+    }
+    // nums[i] faster
+    for (int i=2;i<=9;i++) nums[i] = nums[1];
+    for (int i=2;i<=9;i++) nums[i].add(nums[i-1]);
+    
+    int offset = v.size() - vl.v.size();
+    for (int i=1;i<=9;i++) nums[i]<<=offset;
+    
+    for (int i=offset;i>=0 && (*this)>0;i--)
+    {
+        for (int j=9;j>=0;j--)
+        {
+            //std::cout<<(*this)<<"<--->"<<nums[j]<<std::endl;
+            if (nums[j] < (*this) || nums[j] == (*this))
+            {
+                this->subtract(nums[j]);
+                break;
+            }
+        }
+        for (int k=1;k<=9;k++) nums[k]>>=1;
+    }
+    if (result_is_negative) negative();
+    fix();
+}
+
 void vl_int::truncate(int n)
 {
     std::vector<int>::iterator it;
@@ -371,6 +461,20 @@ vl_int vl_int::operator/(int n) const
     return tmp;
 }
 
+vl_int vl_int::operator/(const vl_int& vl) const
+{
+    vl_int tmp = *this;
+    tmp.divide(vl);
+    return tmp;
+}
+
+vl_int vl_int::operator%(const vl_int& vl) const
+{
+    vl_int tmp = (*this);
+    tmp.mod(vl);
+    return tmp;
+}
+
 bool vl_int::operator<(const vl_int& vl) const
 {
     vl_int tmp = *this;
@@ -384,6 +488,16 @@ bool vl_int::operator>(const vl_int& vl) const
     tmp.subtract(vl);
     tmp.remove_tail0(true);
     return (!tmp.is_negative()) && (tmp.v.size() > 0);
+}
+
+bool vl_int::operator==(const vl_int& vl) const
+{
+    if (v.size() != vl.v.size()) return false;
+    int xsize = v.size();
+    for (int i=0;i<xsize;i++)
+        if (v[i] != vl.v[i])
+            return false;
+    return true;
 }
 
 vl_int vl_fastpow(vl_int base, vl_int power, int sizelimit=0)
@@ -428,9 +542,10 @@ int main()
     //a.add(b);
     //a.dump(cout);
     cout<<a+b<<" "<<a-b<<endl;
-    cout<<a*b<<endl;
-    a.divide(2);
-    cout<<a<<endl;
+    cout<<a*b<<" "<<a/b<<endl;
+    cout<<a%b<<endl;
+    //a.mod(b);
+    //cout<<a<<endl;
     //cout<<vl_fastpow(a, b, 0)<<endl;
     
     //cout<<a<<" "<<vl_int(-233).tostring()<<endl;
