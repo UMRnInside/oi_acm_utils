@@ -8,6 +8,8 @@
 #include <math.h>
 
 #define _NUM 10
+#define _STORAGE 100000000 // 10^8
+#define _STORED_DIGITS 8
 // very large int, may be overkill :)
 class vl_int
 {
@@ -20,8 +22,8 @@ class vl_int
         
         friend std::istream& operator>>(std::istream& in, vl_int& vl);
         friend std::ostream& operator<<(std::ostream& out, const vl_int& vl);
-        int what(int) const;
-        int& operator[](int);
+        long long what(int) const;
+        long long& operator[](int);
         
         bool operator<(const vl_int&) const;
         bool operator>(const vl_int&) const;
@@ -56,7 +58,7 @@ class vl_int
         long long toll() const;
         std::string tostring() const;
     //private:
-        std::vector<int> v;
+        std::vector<long long> v;
 };
 
 vl_int::vl_int(int n)
@@ -69,8 +71,8 @@ vl_int::vl_int(int n)
         v.erase(v.begin(), v.end());
         return;
     }
-    for (;n!=0;n/=_NUM)
-        v.push_back(is_negative ? n%_NUM : n%_NUM);
+    for (;n!=0;n/=_STORAGE)
+        v.push_back(is_negative ? n%_STORAGE : n%_STORAGE);
 }
 
 vl_int::vl_int(std::string ts)
@@ -81,9 +83,8 @@ vl_int::vl_int(std::string ts)
     
     v.erase(v.begin(), v.end());
     
-    std::string::iterator it;
-    for (it=ts.begin();it!=ts.end();it++)
-        v.push_back(*it - '0');
+    for (size_t i=0;i<ts.length();i+=_STORED_DIGITS)
+        v.push_back( stoll( ts.substr(i, _STORED_DIGITS) ) );
     
     if (is_negative)
         for (unsigned int i=0;i<v.size();i++) v[i] = -v[i];
@@ -97,8 +98,7 @@ std::string vl_int::tostring() const
     
     for (auto i : v)
     {
-        tr = std::abs((char)i) + '0';
-        ts = tr + ts;
+        ts = std::to_string(i) + ts;
         if (i < 0) neg = true;
     }
     if (v.size() == 0) return "0";
@@ -152,8 +152,8 @@ vl_int vl_int::operator<<(int n) const
 vl_int vl_int::operator>>(int n) const
 {
     vl_int tmp = *this;
-    std::vector<int>::iterator it;
-    it = tmp.v.begin() + n;
+    //std::vector<int>::iterator it;
+    auto it = tmp.v.begin() + n;
     tmp.v.erase(tmp.v.begin(), it);
     return tmp;
 }
@@ -166,12 +166,11 @@ void vl_int::operator<<=(int n)
 
 void vl_int::operator>>=(int n)
 {
-    std::vector<int>::iterator it;
-    it = this->v.begin() + n;
+    auto it = this->v.begin() + n;
     this->v.erase(this->v.begin(), it);
 }
 
-int vl_int::what(int i) const
+long long vl_int::what(int i) const
 {
     if ((unsigned)i >= v.size() )
     {
@@ -180,7 +179,7 @@ int vl_int::what(int i) const
     return v[i];
 }
 
-int& vl_int::operator[](int i)
+long long& vl_int::operator[](int i)
 {
     if ((unsigned)i >= v.size() )
     {
@@ -193,8 +192,8 @@ int& vl_int::operator[](int i)
 void vl_int::remove_tail0(bool force)
 {
     std::reverse(v.begin(), v.end());
-    
-    std::vector<int>::iterator it;
+
+    auto it = v.begin();
     for (it=v.begin();it!=v.end();it++)
         if (*it != 0) break;
      
@@ -205,8 +204,7 @@ void vl_int::remove_tail0(bool force)
 
 void vl_int::negative()
 {
-    std::vector<int>::iterator it;
-    for (it=v.begin();it!=v.end();it++)
+    for (auto it=v.begin();it!=v.end();it++)
         *it = -(*it);
 }
 
@@ -223,11 +221,11 @@ void vl_int::fix()
     int limit = v.size();
     for (int i=0;i<limit-1;i++)
     {
-        for (int d=0;d<_NUM;d++)
+        for (int d=0;d<_STORAGE;d++)
         {
-            if (v[i] + d*_NUM > 0)
+            if (v[i] + d*_STORAGE > 0)
             {
-                v[i] += d*_NUM;
+                v[i] += d*_STORAGE;
                 v[i+1] -= d;
                 break;
             }
@@ -237,11 +235,11 @@ void vl_int::fix()
     for (unsigned int i=0;i<v.size();i++)
     {
         //std::cout<<i<<":"<<v[i]<<"\n";
-        if (v[i] >= _NUM)
+        if (v[i] >= _STORAGE)
         {
             int d = 0;
-            while (v[i] - d*_NUM>= _NUM) d++;
-            v[i] -= d*_NUM;
+            while (v[i] - d*_STORAGE>= _STORAGE) d++;
+            v[i] -= d*_STORAGE;
             
             (*this)[i+1] += d;
             //v[i+1] += d;
@@ -258,12 +256,12 @@ void vl_int::add(const vl_int& vl, bool needfix)
     for (int i=0;i<limit;i++)
     {
         int sum = (*this)[i] + vl.what(i);
-        v[i] = sum % _NUM;
+        v[i] = sum % _STORAGE;
         
-        if (sum/_NUM)
+        if (sum/_STORAGE)
         {
             (*this)[i+1];
-            v[i+1] += sum/_NUM;
+            v[i+1] += sum/_STORAGE;
         }
     }
     if (needfix) fix();
@@ -288,8 +286,8 @@ void vl_int::multiply(int n, bool needfix)
     
     for (int i=0;i<o_size;i++)
     {
-        tmp[i+1] = n*(self[i]) / _NUM;
-        self[i] = n*(self[i]) % _NUM;
+        tmp[i+1] = n*(self[i]) / _STORAGE;
+        self[i] = n*(self[i]) % _STORAGE;
     }
     
     self.add(tmp, false);
@@ -321,7 +319,7 @@ void vl_int::divide(int n, bool needfix)
     for (int i=osize-1;i>=0;i--)
     {
         if (i-1 >= 0)
-            v[i-1] += (v[i]%n)*_NUM;
+            v[i-1] += (v[i]%n)*_STORAGE;
         v[i] = v[i] / n;
     }
     if (needfix) fix();
@@ -417,10 +415,9 @@ void vl_int::mod(const vl_int& vl)
 
 void vl_int::truncate(int n)
 {
-    std::vector<int>::iterator it;
     if (v.size() < (unsigned)n) return;
     
-    it = v.begin() + n;
+    auto it = v.begin() + n;
     v.erase(it, v.end());
 }
 
