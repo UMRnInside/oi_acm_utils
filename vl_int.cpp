@@ -105,15 +105,15 @@ std::string vl_int::tostring() const
     for (auto i=v.rbegin();i!=v.rend();i++)
     {
         // NOTE: "00000000000"...
+        if (*i < 0) neg = true;
         if (i != v.rbegin() )
         {
             tr = "00000000" + std::to_string(*i);
             tr = tr.substr( tr.length() - _STORED_DIGITS );
         }
         else
-            tr = std::to_string(*i);
+            tr = std::to_string( neg ? -(*i) : *i );
         ts += tr;
-        if (*i < 0) neg = true;
     }
     if (v.size() == 0) return "0";
     if (neg) ts = "-" + ts;
