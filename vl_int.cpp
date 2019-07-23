@@ -80,6 +80,12 @@ vl_int::vl_int(std::string ts)
     bool is_negative = (ts[0] == '-');
     //if (is_negative) std::cout<<"-------\n";
     if (is_negative) ts = ts.substr(1);
+    if (ts.length() % _STORED_DIGITS > 0)
+    {
+        size_t padding = _STORED_DIGITS - (ts.length() % _STORED_DIGITS);
+        for (size_t i=0;i<padding;i++)
+            ts = "0" + ts;
+    }
     
     v.erase(v.begin(), v.end());
     
@@ -93,13 +99,21 @@ vl_int::vl_int(std::string ts)
 
 std::string vl_int::tostring() const
 {
-    std::string ts, tr(" ");
+    std::string ts, tr;
     bool neg = false;
     
-    for (auto i : v)
+    for (auto i=v.rbegin();i!=v.rend();i++)
     {
-        ts = std::to_string(i) + ts;
-        if (i < 0) neg = true;
+        // NOTE: "00000000000"...
+        if (i != v.rbegin() )
+        {
+            tr = "00000000" + std::to_string(*i);
+            tr = tr.substr( tr.length() - _STORED_DIGITS );
+        }
+        else
+            tr = std::to_string(*i);
+        ts += tr;
+        if (*i < 0) neg = true;
     }
     if (v.size() == 0) return "0";
     if (neg) ts = "-" + ts;
@@ -306,7 +320,7 @@ void vl_int::multiply(const vl_int& vl)
         //faq.multiply(vl.what(i));
         faq.multiply(vl.v[i]);
         faq<<=i;
-        this->add(faq, i%17==0);
+        this->add(faq);
         //faq<<=1;
     }
     fix();
@@ -319,8 +333,12 @@ void vl_int::divide(int n, bool needfix)
     for (int i=osize-1;i>=0;i--)
     {
         if (i-1 >= 0)
+        {
+            std::cout << "Passing " << v[i]%n * _STORAGE << " from " << i << " to " <<i-1 << std::endl;
             v[i-1] += (v[i]%n)*_STORAGE;
+        }
         v[i] = v[i] / n;
+        dump(std::cout<<"i= "<<i << " ");
     }
     if (needfix) fix();
 }
@@ -332,11 +350,10 @@ void vl_int::divide(const vl_int& vl)
     if (is_negative()) negative();
     
     // Not to touch vl
-    vl_int nums[10];
-    nums[0] = 0, nums[1] = vl;
-    if (nums[1].is_negative()) nums[1].negative();
+    vl_int basenum = vl;
+    if (basenum.is_negative()) basenum.negative();
     
-    if ((*this) < nums[1])
+    if ((*this) < basenum)
     {
         // Must be 0
         this->v.erase(this->v.begin(), this->v.end());
@@ -344,29 +361,47 @@ void vl_int::divide(const vl_int& vl)
         return;
     }
     
-    // nums[i] faster
-    for (int i=2;i<=9;i++) nums[i] = nums[1];
-    for (int i=2;i<=9;i++) nums[i].add(nums[i-1]);
-    
     int offset = v.size() - vl.v.size();
-    for (int i=1;i<=9;i++) nums[i]<<=offset;
-    
-    for (int i=offset;i>=0 && (*this)>0;i--)
+    basenum <<= offset;
+    for (int i=offset;i>=0;i--)
     {
         result<<=1;
-        for (int j=9;j>=0;j--)
+        if ( (*this) < 0 || (*this) == 0) continue;
+        // Binary search!
+        int l=1, r=_STORAGE;
+        int ans = -1;
+
+        while (l < r)
         {
-            //std::cout<<(*this)<<"<--->"<<nums[j]<<std::endl;
-            if (nums[j] < (*this) || nums[j] == (*this))
+            //std::cout << "l, r = " << l << ", " << r << std::endl;
+            if (r - l <= 5)
             {
-                if (j == 0) break;
-                
-                this->subtract(nums[j]);
-                result.add(j);
+                ans = r;
+                for (int j=r;j>=l;j--)
+                {
+                    if ( (*this) == basenum*j || (*this) > basenum * j)
+                    {
+                        ans = j;
+                        break;
+                    }
+                }
                 break;
             }
+
+            int mid = (l+r)/2;
+            vl_int midvl = basenum * mid;
+            //std::cout<<(*this)<<"<--->"<<midvl<<std::endl;
+
+            if (midvl < (*this)) // too small
+                l = mid;
+            else if (midvl > (*this)) // to large
+                r = mid;
+            else // break
+                ans = mid, l=mid, r=mid;
         }
-        for (int k=1;k<=9;k++) nums[k]>>=1;
+        result.add(ans);
+        this->subtract(basenum*ans);
+        basenum>>=1;
     }
     
     if (result_is_negative) result.negative();
@@ -378,39 +413,10 @@ void vl_int::mod(const vl_int& vl)
 {
     bool result_is_negative = vl.is_negative();
     if (is_negative()) negative();
-    
-    vl_int nums[10];
-    nums[0] = 0, nums[1] = vl;
-    if (nums[1].is_negative()) nums[1].negative();
-    
-    if ((*this) < nums[1])
-    {
-        //std::cout<<(*this)<<" < "<<nums[1]<<std::endl;
-        if (result_is_negative) negative();
-        return;
-    }
-    // nums[i] faster
-    for (int i=2;i<=9;i++) nums[i] = nums[1];
-    for (int i=2;i<=9;i++) nums[i].add(nums[i-1]);
-    
-    int offset = v.size() - vl.v.size();
-    for (int i=1;i<=9;i++) nums[i]<<=offset;
-    
-    for (int i=offset;i>=0 && (*this)>0;i--)
-    {
-        for (int j=9;j>=0;j--)
-        {
-            //std::cout<<(*this)<<"<--->"<<nums[j]<<std::endl;
-            if (nums[j] < (*this) || nums[j] == (*this))
-            {
-                this->subtract(nums[j]);
-                break;
-            }
-        }
-        for (int k=1;k<=9;k++) nums[k]>>=1;
-    }
+    vl_int tmp = (*this);
+
+    this->subtract( (tmp/vl)*vl );
     if (result_is_negative) negative();
-    fix();
 }
 
 void vl_int::truncate(int n)
@@ -541,11 +547,6 @@ int main()
     cout<<a+b<<" "<<a-b<<endl;
     cout<<a*b<<" "<<a/b<<endl;
     cout<<a%b<<endl;
-    //a.mod(b);
-    //cout<<a<<endl;
     //cout<<vl_fastpow(a, b, 0)<<endl;
-    
-    //cout<<a<<" "<<vl_int(-233).tostring()<<endl;
-    //vl_int(-233).dump(cout);
     return 0;
 }
