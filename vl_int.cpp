@@ -108,7 +108,7 @@ std::string vl_int::tostring() const
         if (*i < 0) neg = true;
         if (i != v.rbegin() )
         {
-            tr = "00000000" + std::to_string(*i);
+            tr = "00000000" + std::to_string( std::abs(*i));
             tr = tr.substr( tr.length() - _STORED_DIGITS );
         }
         else
@@ -334,11 +334,11 @@ void vl_int::divide(int n, bool needfix)
     {
         if (i-1 >= 0)
         {
-            std::cout << "Passing " << v[i]%n * _STORAGE << " from " << i << " to " <<i-1 << std::endl;
+            //std::cout << "Passing " << v[i]%n * _STORAGE << " from " << i << " to " <<i-1 << std::endl;
             v[i-1] += (v[i]%n)*_STORAGE;
         }
         v[i] = v[i] / n;
-        dump(std::cout<<"i= "<<i << " ");
+        //dump(std::cout<<"i= "<<i << " ");
     }
     if (needfix) fix();
 }
@@ -377,7 +377,7 @@ void vl_int::divide(const vl_int& vl)
             if (r - l <= 5)
             {
                 ans = r;
-                for (int j=r;j>=l;j--)
+                for (int j=l;j<=r;j++)
                 {
                     if ( (*this) == basenum*j || (*this) > basenum * j)
                     {
@@ -544,8 +544,8 @@ int main()
     cin>>a>>b;
     //a.add(b);
     //a.dump(cout);
-    cout<<a+b<<" "<<a-b<<endl;
-    cout<<a*b<<" "<<a/b<<endl;
+    cout<<a+b<<"\n"<<a-b<<endl;
+    cout<<a*b<<"\n"<<a/b<<endl;
     cout<<a%b<<endl;
     //cout<<vl_fastpow(a, b, 0)<<endl;
     return 0;
