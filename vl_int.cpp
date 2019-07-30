@@ -28,6 +28,8 @@ class vl_int
         bool operator<(const vl_int&) const;
         bool operator>(const vl_int&) const;
         bool operator==(const vl_int&) const;
+        bool operator>=(const vl_int&) const;
+        bool operator<=(const vl_int&) const;
         vl_int operator+(const vl_int&) const;
         vl_int operator-(const vl_int&) const;
         vl_int operator*(const vl_int&) const;
@@ -368,8 +370,8 @@ void vl_int::divide(const vl_int& vl)
         result<<=1;
         if ( (*this) < 0 || (*this) == 0) continue;
         // Binary search!
-        int l=1, r=_STORAGE;
-        int ans = -1;
+        int l=0, r=_STORAGE;
+        int ans = 0;
 
         while (l < r)
         {
@@ -377,9 +379,10 @@ void vl_int::divide(const vl_int& vl)
             if (r - l <= 5)
             {
                 ans = r;
-                for (int j=l;j<=r;j++)
+                for (int j=r;j>=l;j--)
                 {
-                    if ( (*this) == basenum*j || (*this) > basenum * j)
+                    vl_int tmpvl = basenum * j;
+                    if ( (*this) >= tmpvl )
                     {
                         ans = j;
                         break;
@@ -485,6 +488,14 @@ bool vl_int::operator<(const vl_int& vl) const
     return tmp.is_negative();
 }
 
+bool vl_int::operator<=(const vl_int& vl) const
+{
+    vl_int tmp = *this;
+    tmp.subtract(vl);
+    return tmp.is_negative() || (tmp.v.size() <= 1 && tmp[0] == 0);
+}
+
+
 bool vl_int::operator>(const vl_int& vl) const
 {
     vl_int tmp = *this;
@@ -493,6 +504,13 @@ bool vl_int::operator>(const vl_int& vl) const
     return (!tmp.is_negative()) && (tmp.v.size() > 0);
 }
 
+bool vl_int::operator>=(const vl_int& vl) const
+{
+    vl_int tmp = *this;
+    tmp.subtract(vl);
+    tmp.remove_tail0(true);
+    return (!tmp.is_negative());
+}
 bool vl_int::operator==(const vl_int& vl) const
 {
     if (v.size() != vl.v.size()) return false;
@@ -542,11 +560,17 @@ int main()
     using namespace std;
     vl_int a, b;
     cin>>a>>b;
-    //a.add(b);
-    //a.dump(cout);
-    cout<<a+b<<"\n"<<a-b<<endl;
-    cout<<a*b<<"\n"<<a/b<<endl;
-    cout<<a%b<<endl;
+    cout<<a+b<<endl;
+    cout<<a-b<<endl;
+    cout<<a*b<<endl;
+    // a/b && a%b, for better performance
+    vl_int t = a/b;
+    cout<<t<<endl;
+    t.multiply(b);
+    //cout<<a%b<<endl;
+    cout<<a-t<<endl;
     //cout<<vl_fastpow(a, b, 0)<<endl;
     return 0;
 }
+
+// AC: https://www.luogu.org/record/21822832
