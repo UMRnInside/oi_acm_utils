@@ -7,9 +7,9 @@
 #include <queue>
 #define ll long long
 #define INF 0x3f3f3f3f
-#define MAXN 207
+#define MAXN 10007
 /*
- * For : https://www.luogu.org/problemnew/show/P1345
+ * For : https://www.luogu.org/problemnew/show/P3376
  */
 struct edge_t
 {
@@ -30,15 +30,11 @@ int main()
 {
     scanf("%d%d%d%d", &n, &m, &start, &end);
     // start/end cap should be INF
-    for (int i=1;i<=n;i++)
-        add_edge(i, i+n, (i==start || i == end) ? INF : 1);
-
     for (int i=1;i<=m;i++)
     {
-        int a, b;
-        scanf("%d%d", &a, &b);
-        add_edge(a+n, b, INF);
-        add_edge(b+n, a, INF);
+        int a, b, f;
+        scanf("%d%d%d", &a, &b, &f);
+        add_edge(a, b, f);
     }
     printf("%d", maxflow());
     return 0;
