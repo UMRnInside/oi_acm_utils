@@ -3,14 +3,15 @@
 #include <cstring>
 #include <queue>
 #include <algorithm>
-#define MAXN 207
+#define MAXN 1007
 #define MAXL 100007
+#define CHAR_RANGE 128
 #define memset0(_p) memset( (_p), 0, sizeof( (_p) ) )
-#define c2ui(_x) ( (size_t)( (_x) - 'a') )
+#define c2ui(_x) ( (size_t)(_x) )
 namespace AC
 {
-    const int SZ = MAXN * 80;
-    int total, trie[SZ][26]; // 'a' - 'z'
+    const int SZ = MAXN * 53;
+    int total, trie[SZ][CHAR_RANGE]; // 'a' - 'z'
     int fail[SZ], index[SZ], value[SZ];
 
     int count[MAXN]; // for inserted strings
@@ -40,14 +41,14 @@ namespace AC
     void build()
     {
         std::queue<int> q;
-        // NOTE! i<26
-        for (int i=0;i<26;i++)
+        // NOTE! i<CHAR_RANGE
+        for (int i=0;i<CHAR_RANGE;i++)
             if (trie[0][i])
                 q.push(trie[0][i]);
         while (!q.empty())
         {
             int cur = q.front();q.pop();
-            for (int i=0;i<26;i++)
+            for (int i=0;i<CHAR_RANGE;i++)
             {
                 if (trie[cur][i])
                 {
@@ -86,7 +87,7 @@ char strs[MAXN][100];
 
 int main()
 {
-    char target[1048576];
+    char target[2097152];
     while ( scanf("%d", &n) > 0)
     {
         if (n == 0)
@@ -100,12 +101,10 @@ int main()
         AC::build();
 
         scanf("%s", target);
-        int max_appeared = AC::run_str(target);
-        printf("%d\n", max_appeared);
+        AC::run_str(target);
         for (int i=1;i<=n;i++)
-            if (AC::count[i] == max_appeared)
-                printf("%s\n", strs[i]);
+            if (AC::count[i] > 0)
+                printf("%s: %d\n", strs[i], AC::count[i]);
     }
     return 0;
 }
-// AC: https://www.luogu.org/problem/P3796
