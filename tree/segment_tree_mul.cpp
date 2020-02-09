@@ -4,6 +4,7 @@
 #include <algorithm>
 #include <functional>
 // MACROS!
+// TODO: Faster/Shorter expression
 #define lch(_x) ( (_x)<<1 )
 #define rch(_x) ( ((_x)<<1) | 1)
 
